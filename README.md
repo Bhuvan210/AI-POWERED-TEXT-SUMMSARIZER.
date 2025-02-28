@@ -1,5 +1,5 @@
 # AI-POWERED-TEXT-SUMMSARIZER.
-# **⚡ AI-Powered Text Summarizer**  
+ 
 An **AI-driven text summarization tool** available as a **website, mobile app, and API**, designed to generate **concise and context-aware** summaries of large texts.  
 
 ## 🌟 **Features**  
