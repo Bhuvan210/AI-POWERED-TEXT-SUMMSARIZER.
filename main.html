@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ AI Text Summarizer Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .gradient-bg {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        .dark .gradient-bg {
+            background: linear-gradient(-45deg, #1a1a1a, #2d2d2d, #404040, #525252);
+        }
+        .highlight {
+            background: #ffeb3b;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .dark .highlight {
+            background: #f59e0b;
+            color: #1f2937;
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen p-8 transition-colors duration-300">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12 relative">
+            <button onclick="toggleTheme()" class="absolute top-0 right-0 p-2 rounded-full bg-white/20 hover:bg-white/30 dark:bg-gray-700/50">
+                🌓
+            </button>
+            <h1 class="text-4xl font-bold text-white mb-4 dark:text-gray-100">AI Text Summarizer Pro ✨</h1>
+            <p class="text-white opacity-90 dark:text-gray-300">Transform long texts into concise summaries instantly</p>
+        </div>
+
+        <!-- Input Options -->
+        <div class="flex gap-4 mb-4">
+            <select id="examples" class="flex-1 p-2 rounded-lg bg-white/90 dark:bg-gray-800/90" onchange="loadExample(this)">
+                <option value="">📚 Examples</option>
+                <option value="news">News Article</option>
+                <option value="research">Research Paper</option>
+                <option value="tech">Technology Blog</option>
+            </select>
+            
+            <input type="file" id="pdf-input" accept=".pdf" hidden>
+            <button onclick="document.getElementById('pdf-input').click()" 
+                    class="px-4 py-2 bg-white/90 dark:bg-gray-800/90 rounded-lg hover:scale-105 transition-transform">
+                📎 PDF
+            </button>
+            
+            <div class="flex-1 relative">
+                <input type="url" id="url-input" 
+                       class="w-full p-2 rounded-lg bg-white/90 dark:bg-gray-800/90" 
+                       placeholder="🌐 Enter URL">
+                <button onclick="processURL()" 
+                        class="absolute right-2 top-2 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                    Load
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Input Card -->
+        <div class="bg-white/90 dark:bg-gray-800/90 rounded-xl shadow-2xl p-6 mb-8 backdrop-blur-sm">
+            <div class="flex gap-4 mb-6">
+                <div class="flex-1">
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Max Length</label>
+                    <input type="range" id="max_length" min="50" max="300" value="150" 
+                           class="w-full range range-primary dark:range-warning">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Min Length</label>
+                    <input type="range" id="min_length" min="20" max="150" value="50" 
+                           class="w-full range range-secondary dark:range-warning">
+                </div>
+            </div>
+
+            <textarea id="input-text" 
+                      class="w-full h-48 p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg 
+                             focus:outline-none focus:border-blue-500 transition-all bg-transparent dark:text-gray-100"
+                      placeholder="Paste text, upload PDF, or enter URL..."></textarea>
+
+            <div class="flex justify-between items-center mt-4">
+                <div class="text-sm text-gray-500 dark:text-gray-400" id="char-count">0 characters</div>
+                <button onclick="summarize()" 
+                        class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-3 rounded-full 
+                               hover:scale-105 transition-transform flex items-center gap-2">
+                    <span id="button-text">✨ Summarize</span>
+                    <div id="spinner" class="hidden">
+                        <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Metrics Card -->
+        <div class="bg-white/90 dark:bg-gray-800/90 rounded-xl shadow-2xl p-6 mb-8 backdrop-blur-sm">
+            <h3 class="text-xl font-semibold mb-4 dark:text-gray-100">📊 Text Analysis</h3>
+            <div id="metrics" class="grid grid-cols-3 gap-4 text-center">
+                <div class="metric-box">
+                    <div class="text-2xl font-bold dark:text-gray-100">-</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Readability</div>
+                </div>
+                <div class="metric-box">
+                    <div class="text-2xl font-bold dark:text-gray-100">-</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Words</div>
+                </div>
+                <div class="metric-box">
+                    <div class="text-2xl font-bold dark:text-gray-100">-</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Sentences</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Card -->
+        <div class="bg-white/90 dark:bg-gray-800/90 rounded-xl shadow-2xl p-6 backdrop-blur-sm transition-transform 
+                    hover:translate-y-[-5px]">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold dark:text-gray-100">📝 Summary</h3>
+                <button onclick="copySummary()" 
+                        class="bg-gray-100 dark:bg-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 
+                               transition-colors">
+                    📋 Copy
+                </button>
+            </div>
+            <div id="summary" class="text-gray-700 dark:text-gray-300 leading-relaxed"></div>
+        </div>
+    </div>
+
+    <script>
+        // Theme Toggle
+        document.addEventListener('DOMContentLoaded', () => {
+            const theme = localStorage.getItem('theme') || 'light';
+            document.documentElement.classList.toggle('dark', theme === 'dark');
+        });
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+        }
+
+        // Example Texts
+        const EXAMPLES = {
+            news: "Breaking News: NASA's James Webb Space Telescope has discovered...",
+            research: "Recent studies in quantum computing demonstrate...",
+            tech: "Artificial intelligence is revolutionizing healthcare through..."
+        };
+
+        function loadExample(select) {
+            document.getElementById('input-text').value = EXAMPLES[select.value] || '';
+            updateMetrics();
+        }
+
+        // PDF/URL Handling
+        async function processURL() {
+            const url = document.getElementById('url-input').value;
+            try {
+                const response = await fetch('/process_url', {
+                    method: 'POST',
+                    body: `url=${encodeURIComponent(url)}`
+                });
+                const data = await response.json();
+                document.getElementById('input-text').value = data.text;
+                updateMetrics();
+            } catch (error) {
+                alert("Error loading URL content");
+            }
+        }
+
+        document.getElementById('pdf-input').addEventListener('change', async (e) => {
+            const formData = new FormData();
+            formData.append('pdf', e.target.files[0]);
+            
+            try {
+                const response = await fetch('/process_pdf', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                document.getElementById('input-text').value = data.text;
+                updateMetrics();
+            } catch (error) {
+                alert("Error reading PDF file");
+            }
+        });
+
+        // Highlight Keywords
+        function highlightKeywords(text) {
+            const keywords = ["AI", "machine learning", "quantum", "NASA", "healthcare"];
+            keywords.forEach(keyword => {
+                const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+                text = text.replace(regex, match => 
+                    `<span class="highlight">${match}</span>`
+                );
+            });
+            return text;
+        }
+
+        // Update Metrics
+        async function updateMetrics() {
+            const text = document.getElementById('input-text').value;
+            if (!text) return;
+
+            const response = await fetch('/analyze', {
+                method: 'POST',
+                body: `text=${encodeURIComponent(text)}`
+            });
+            const metrics = await response.json();
+            
+            document.getElementById('metrics').innerHTML = `
+                <div class="metric-box">
+                    <div class="text-2xl font-bold dark:text-gray-100">${metrics.readability.toFixed(1)}</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Readability</div>
+                </div>
+                <div class="metric-box">
+                    <div class="text-2xl font-bold dark:text-gray-100">${metrics.word_count}</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Words</div>
+                </div>
+                <div class="metric-box">
+                    <div class="text-2xl font-bold dark:text-gray-100">${metrics.sentence_count}</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Sentences</div>
+                </div>
+            `;
+        }
+
+        // Character Counter
+        document.getElementById('input-text').addEventListener('input', function(e) {
+            document.getElementById('char-count').textContent = 
+                `${e.target.value.length} characters`;
+            updateMetrics();
+        });
+
+        // Summarization Function
+        async function summarize() {
+            const text = document.getElementById('input-text').value;
+            const max_length = document.getElementById('max_length').value;
+            const min_length = document.getElementById('min_length').value;
+
+            if (!text.trim()) {
+                alert("Please enter some text!");
+                return;
+            }
+
+            // Show spinner
+            document.getElementById('spinner').classList.remove('hidden');
+            document.getElementById('button-text').textContent = 'Summarizing...';
+
+            try {
+                const response = await fetch('/summarize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `text=${encodeURIComponent(text)}&max_length=${max_length}&min_length=${min_length}`
+                });
+
+                const result = await response.json();
+                document.getElementById('summary').innerHTML = 
+                    highlightKeywords(result.summary.replace(/\n/g, '<br>'));
+
+            } catch (error) {
+                alert("Error generating summary. Please try again.");
+            } finally {
+                document.getElementById('spinner').classList.add('hidden');
+                document.getElementById('button-text').textContent = '✨ Summarize';
+            }
+        }
+
+        // Copy to Clipboard
+        function copySummary() {
+            const summary = document.getElementById('summary').textContent;
+            navigator.clipboard.writeText(summary);
+            alert("Summary copied to clipboard!");
+        }
+    </script>
+</body>
+</html>
